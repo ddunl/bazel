@@ -559,7 +559,7 @@ public abstract class CcBinary implements RuleConfiguredTargetFactory {
           extraLinkBuildLibraryOutput.getRuntimeLibraries());
     }
 
-    Pair<CcLinkingOutputs, CcLauncherInfo> ccLinkingOutputsAndCcLinkingInfo =
+    Pair<Pair<CcLinkingOutputs, CcLauncherInfo>, CcLinkingContext> ccLinkingOutputsAndCcLinkingInfo =
         createTransitiveLinkingActions(
             ruleContext,
             ruleBuilder,
@@ -587,9 +587,11 @@ public abstract class CcBinary implements RuleConfiguredTargetFactory {
       return;
     }
 
-    CcLinkingOutputs ccLinkingOutputsBinary = ccLinkingOutputsAndCcLinkingInfo.first;
+    CcLinkingOutputs ccLinkingOutputsBinary = ccLinkingOutputsAndCcLinkingInfo.first.first;
 
-    CcLauncherInfo ccLauncherInfo = ccLinkingOutputsAndCcLinkingInfo.second;
+    CcLauncherInfo ccLauncherInfo = ccLinkingOutputsAndCcLinkingInfo.first.second;
+
+    depsCcLinkingContext = ccLinkingOutputsAndCcLinkingInfo.second;
 
     LibraryToLink ccLinkingOutputsBinaryLibrary = ccLinkingOutputsBinary.getLibraryToLink();
     ImmutableList.Builder<LibraryToLink> librariesBuilder = ImmutableList.builder();
@@ -746,8 +748,8 @@ public abstract class CcBinary implements RuleConfiguredTargetFactory {
         .setRunfilesSupport(runfilesSupport, binary)
         .addNativeDeclaredProvider(ccLauncherInfo);
   }
-
-  private static Pair<CcLinkingOutputs, CcLauncherInfo> createTransitiveLinkingActions(
+  // Forgive this return type, I don't know Java :)
+  private static Pair<Pair<CcLinkingOutputs, CcLauncherInfo>, CcLinkingContext>  createTransitiveLinkingActions(
       RuleContext ruleContext,
       RuleConfiguredTargetBuilder ruleBuilder,
       CcToolchainProvider ccToolchain,
@@ -898,10 +900,10 @@ public abstract class CcBinary implements RuleConfiguredTargetFactory {
 
     ccLinkingHelper.setDefFile(winDefFile);
 
-    return Pair.of(
+    return Pair.of(Pair.of(
         ccLinkingHelper.link(ccCompilationOutputsWithOnlyObjects),
         new CcLauncherInfo(
-            ccInfoWithoutExtraLinkTimeLibraries, ccCompilationOutputsWithOnlyObjects));
+            ccInfoWithoutExtraLinkTimeLibraries, ccCompilationOutputsWithOnlyObjects)), ccLinkingContext);
   }
 
   /**
